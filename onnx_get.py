@@ -3,13 +3,13 @@ import tempfile
 import shutil
 from pathlib import Path
 
-VERSION = "1.17.0"
+VERSION = "1.19.2"
 
 SOURCES = {
-    "windows": f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-win-x64-{VERSION}.zip",
-    "macos": f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-osx-universal2-{VERSION}.tgz",
-    "linux": f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-linux-x64-{VERSION}.tgz",
-    "linuxbsd": f"https://github.com/microsoft/onnxruntime/releases/download/v1.17.0/onnxruntime-linux-x64-{VERSION}.tgz",
+    "windows": f"https://github.com/microsoft/onnxruntime/releases/download/v1.19.2/onnxruntime-win-x64-{VERSION}.zip",
+    "macos": f"https://github.com/microsoft/onnxruntime/releases/download/v1.19.2/onnxruntime-osx-universal2-{VERSION}.tgz",
+    "linux": f"https://github.com/microsoft/onnxruntime/releases/download/v1.19.2/onnxruntime-linux-x64-{VERSION}.tgz",
+    "linuxbsd": f"https://github.com/microsoft/onnxruntime/releases/download/v1.19.2/onnxruntime-linux-x64-{VERSION}.tgz",
     "android": f"https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/{VERSION}/onnxruntime-android-{VERSION}.aar",
 }
 

@@ -95,7 +95,8 @@ OnnxSession* OnnxRunner::load_model(String model_source_local )
 	#ifdef _WIN32
 	const wchar_t* model_path = model_source.wide_string().get_data();
 	#else
-	const char* model_path = model_source.ascii().get_data();
+	CharString model_source_ascii = model_source.ascii();
+	const char* model_path = model_source_ascii.get_data();
 	#endif
 	std::wcout << L"MODEL PATH:" << model_path <<std::endl;
 	{

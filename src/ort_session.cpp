@@ -208,13 +208,16 @@ Vector<PackedFloat32Array> OnnxSession::_run_internal(Vector<PackedFloat32Array>
 
 	for (size_t idx = 0; idx < num_input_nodes; idx++)
 	{
-		auto tensor_info = m_model->input_infos[idx];
-		auto input_node_dims = tensor_info.GetShape();
+		auto input_node_dims = m_model->input_shapes[idx];
 		auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-		auto element_count = tensor_info.GetElementCount();
+		
+		int64_t element_count = 1;
+		for (auto dim : input_node_dims) {
+			if (dim > 0) element_count *= dim;
+		}
 
 		auto input = inputs[idx];
-		ERR_FAIL_COND_V_MSG(input.size() != element_count, Vector<PackedFloat32Array>(), vformat("Input has incorrect size in OnnxSession.run %d, expected %d", input.size(), element_count));
+		ERR_FAIL_COND_V_MSG(input.size() != element_count, Vector<PackedFloat32Array>(), vformat("Input has incorrect size in OnnxSession.run %d, expected %d", (int64_t)input.size(), (int64_t)element_count));
 
 		Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, input.ptrw(), element_count,
 																  input_node_dims.data(), input_node_dims.size());
