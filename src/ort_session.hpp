@@ -1,7 +1,8 @@
 #pragma once
 
-#include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/image.hpp>
 
 using namespace godot;
 
@@ -33,6 +34,7 @@ public:
 	OnnxSession();
 
 	Variant run(Variant input);
+	Variant run_image(Variant image, float input_scale, bool use_bgr);
 
 	uint32_t num_inputs();
 	PackedInt64Array input_shape(uint32_t idx);

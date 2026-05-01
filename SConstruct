@@ -70,6 +70,8 @@ if env["platform"] == "macos":
         env["platform"],
         debug_or_release,
     )
+    # Add RPATHs so the library can find its dependencies in the addons folder
+    env.Append(LINKFLAGS=["-Wl,-rpath,@loader_path/../macos/arm64", "-Wl,-rpath,@loader_path/../macos/universal"])
 else:
     # shared library has to be in same path as onnx libraries,
     # otherwise we have to deal with library search paths and

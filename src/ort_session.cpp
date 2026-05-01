@@ -69,6 +69,7 @@ void OnnxSession::_bind_methods()
 {
 
 	ClassDB::bind_method(D_METHOD("run"), &OnnxSession::run);
+	ClassDB::bind_method(D_METHOD("run_image", "image", "input_scale", "use_bgr"), &OnnxSession::run_image);
 	ClassDB::bind_method(D_METHOD("num_inputs"), &OnnxSession::num_inputs);
 	ClassDB::bind_method(D_METHOD("input_shape"), &OnnxSession::input_shape);
 	ClassDB::bind_method(D_METHOD("input_name"), &OnnxSession::input_name);
@@ -198,6 +199,51 @@ Variant OnnxSession::run(Variant input)
 		return retval;
 	}
 	return Variant();
+}
+
+Variant OnnxSession::run_image(Variant image_var, float input_scale, bool use_bgr)
+{
+	Ref<Image> image = image_var;
+	ERR_FAIL_COND_V_MSG(image.is_null(), Variant(), "Input is not a valid Image");
+	
+	// Pre-process image into PackedFloat32Array in C++
+	int w = image->get_width();
+	int h = image->get_height();
+	int pixel_count = w * h;
+	
+	// Ensure we are in a readable format
+	if (image->get_format() != Image::FORMAT_RGBA8 && image->get_format() != Image::FORMAT_RGB8) {
+		image->convert(Image::FORMAT_RGBA8);
+	}
+	
+	PackedByteArray raw = image->get_data();
+	const uint8_t* raw_ptr = raw.ptr();
+	int channels = (image->get_format() == Image::FORMAT_RGBA8) ? 4 : 3;
+	
+	PackedFloat32Array input_data;
+	input_data.resize(pixel_count * 3);
+	float* data_ptr = input_data.ptrw();
+	
+	float mult = input_scale / 255.0f;
+	
+	for (int i = 0; i < pixel_count; i++) {
+		float r = (float)raw_ptr[i * channels] * mult;
+		float g = (float)raw_ptr[i * channels + 1] * mult;
+		float b = (float)raw_ptr[i * channels + 2] * mult;
+		
+		if (use_bgr) {
+			data_ptr[i] = b;
+			data_ptr[i + pixel_count] = g;
+			data_ptr[i + 2 * pixel_count] = r;
+		} else {
+			data_ptr[i] = r;
+			data_ptr[i + pixel_count] = g;
+			data_ptr[i + 2 * pixel_count] = b;
+		}
+	}
+	
+	// Now call the standard run logic
+	return run(input_data);
 }
 
 Vector<PackedFloat32Array> OnnxSession::_run_internal(Vector<PackedFloat32Array> &inputs)
