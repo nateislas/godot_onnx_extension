@@ -29,6 +29,7 @@ public:
 	static OnnxRunner *get_singleton();
 
 	OnnxSession* load_model(String model_source );
+	PackedStringArray get_available_providers();
 
 	OnnxRunner();
 	~OnnxRunner();

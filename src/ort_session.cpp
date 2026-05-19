@@ -206,15 +206,14 @@ Variant OnnxSession::run_image(Variant image_var, float input_scale, bool use_bg
 	Ref<Image> image = image_var;
 	ERR_FAIL_COND_V_MSG(image.is_null(), Variant(), "Input is not a valid Image");
 	
-	// Pre-process image into PackedFloat32Array in C++
-	int w = image->get_width();
-	int h = image->get_height();
-	int pixel_count = w * h;
-	
 	// Ensure we are in a readable format
 	if (image->get_format() != Image::FORMAT_RGBA8 && image->get_format() != Image::FORMAT_RGB8) {
 		image->convert(Image::FORMAT_RGBA8);
 	}
+	
+	int w = image->get_width();
+	int h = image->get_height();
+	int pixel_count = w * h;
 	
 	PackedByteArray raw = image->get_data();
 	const uint8_t* raw_ptr = raw.ptr();
@@ -226,23 +225,25 @@ Variant OnnxSession::run_image(Variant image_var, float input_scale, bool use_bg
 	
 	float mult = input_scale / 255.0f;
 	
-	for (int i = 0; i < pixel_count; i++) {
-		float r = (float)raw_ptr[i * channels] * mult;
-		float g = (float)raw_ptr[i * channels + 1] * mult;
-		float b = (float)raw_ptr[i * channels + 2] * mult;
-		
-		if (use_bgr) {
-			data_ptr[i] = b;
-			data_ptr[i + pixel_count] = g;
-			data_ptr[i + 2 * pixel_count] = r;
-		} else {
-			data_ptr[i] = r;
-			data_ptr[i + pixel_count] = g;
-			data_ptr[i + 2 * pixel_count] = b;
-		}
+	// Optimized loop: planar conversion (CHW)
+	float* r_ptr = data_ptr;
+	float* g_ptr = data_ptr + pixel_count;
+	float* b_ptr = data_ptr + 2 * pixel_count;
+	
+	if (use_bgr) {
+		// Swap R and B pointers for BGR output
+		float* temp = r_ptr;
+		r_ptr = b_ptr;
+		b_ptr = temp;
 	}
 	
-	// Now call the standard run logic
+	for (int i = 0; i < pixel_count; i++) {
+		int base = i * channels;
+		*r_ptr++ = (float)raw_ptr[base] * mult;
+		*g_ptr++ = (float)raw_ptr[base + 1] * mult;
+		*b_ptr++ = (float)raw_ptr[base + 2] * mult;
+	}
+	
 	return run(input_data);
 }
 

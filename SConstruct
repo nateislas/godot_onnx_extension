@@ -27,14 +27,23 @@ sources = Glob("src/*.cpp")
 env.Append(LIBPATH=f"{onnx_src_path}/lib/")
 env.Append(LIBS=["onnxruntime"])
 
-# Find gdextension path even if the directory or extension is renamed (e.g. project/addons/example/example.gdextension).
-(extension_path,) = glob("project/addons/*/*.gdextension")
+# Find gdextension path. Prioritize root addons over local project/addons.
+extension_paths = glob("../addons/*/*.gdextension")
+if not extension_paths:
+    extension_paths = glob("project/addons/*/*.gdextension")
 
-# Find the addon path (e.g. project/addons/example).
+if not extension_paths:
+    print("Error: Could not find any .gdextension file in ../addons or project/addons")
+    Exit(1)
+
+extension_path = extension_paths[0]
+print(f"Using extension path: {extension_path}")
+
+# Find the addon path
 addon_path = Path(extension_path).parent
 onnx_dest_path = addon_path / onnx_dest_path
 
-# Find the project name from the gdextension file (e.g. example).
+# Find the project name
 project_name = Path(extension_path).stem
 
 
@@ -95,9 +104,9 @@ library = env.SharedLibrary(
 
 
 def make_gdextension_part(target, source, env):
-    output_path = Path(str(target[0])).absolute()
-    target_lib = Path(env["target_lib"]).absolute()
-    extension_base = Path(env["addon_path"])
+    output_path = Path(str(target[0])).resolve()
+    target_lib = Path(env["target_lib"]).resolve()
+    extension_base = Path(env["addon_path"]).resolve()
     # make library key
     debug_or_release = env["debug_or_release"]
     platform_key = f"{env['platform']}.{debug_or_release}.{env['arch']}"
@@ -106,8 +115,8 @@ def make_gdextension_part(target, source, env):
     extension_values.append(("libraries", {platform_key: lib_value}))
     deps_keys = {}
     for lib_name in target_lib.parent.glob(f"*{env['SHLIBSUFFIX']}"):
-        if lib_name != target_lib:
-            deps_keys[lib_name.relative_to(output_path.parent)] = ""
+        if lib_name.resolve() != target_lib:
+            deps_keys[lib_name.resolve().relative_to(output_path.parent)] = ""
     extension_values.append(("dependencies", {platform_key: deps_keys}))
     output_path.write_text(godotconfig.get_as_text(extension_values))
 
